@@ -2,63 +2,129 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 // --- TYPES ---
-
 export type UserRole = 'founder' | 'innovator';
+export type VentureTrack = 'startup' | 'researcher';
 
-// The "Streamlined" Profile for Innovators (No Idea yet)
+// Innovator Profile (Page 10)
 export interface InnovatorProfile {
-    // 1. Identity
-    teamName: string;         // Can be just their name if solo
-    leadName: string;
+    fullName: string;
     email: string;
     phone: string;
-
-    // 2. Professional Context
-    currentRole: string;      // e.g. "Technical Lead", "Student"
-    professionalStatus: string; // "Student", "Working Professional", "Independent"
     linkedinUrl: string;
-
-    // 3. Location
+    professionalStatus: string;
+    currentRole: string;
+    organization: string;
     city: string;
     country: string;
-
-    // 4. History (Prior Support)
-    isIncubated: boolean | null; // null means not answered yet
-    incubatorName: string;
-    hasGrants: boolean | null;
-    grantDetails: string;
-
-    // 5. Skills & Focus
-    primarySkill: string;     // e.g. "AI/ML", "Robotics", "Design"
+    educationLevel: string;
+    college: string;
     yearsExperience: string;
+    primarySkill: string;
+    bio: string;
 }
 
-// The "Detailed" Profile for Founders (Has Idea/Startup)
+// Co-Founder Structure (Page 2)
+export interface CoFounder {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    affiliation: string;
+    skillArea: string;
+    isFullTime: boolean;
+}
+
+// Founder Profile (Page 1)
 export interface FounderProfile {
     fullName: string;
     email: string;
     phone: string;
-    role: string;
+    currentRole: string;
     affiliation: string;
     organization: string;
+    city: string;
+    country: string;
     educationLevel: string;
+    college: string;
+    discipline: string;
     yearsExperience: string;
-    linkedin: string;
+    primaryStrength: string;
+    linkedinUrl: string;
+    githubUrl: string;
+    scholarUrl: string;
+    portfolioUrl: string;
     bio: string;
-    // ... plus co-founders, venture details etc (simplified for this step)
+}
+
+// NEW: Venture Profile (Pages 4-9)
+export interface VentureProfile {
+    track: VentureTrack | null;
+
+    // Identity
+    organizationName: string; // Startup Name or Project Name
+    registrationYear: string; // For startups
+    legalEntity: string; // Pvt Ltd, LLP, etc.
+    website: string;
+
+    // Institute (Researcher only)
+    instituteName: string;
+    isDsirCertified: boolean;
+
+    // Funding
+    hasFunding: boolean;
+    fundingDetails: string; // Investors or Grants
+    incubatorName: string;
+
+    // Tech Focus
+    vertical: string; // Health, Mobility, etc.
+    techCategory: string[]; // AI, Robotics (Max 2)
+
+    // Maturity
+    currentStage: string; // Prototype, MVP, Pilot
+    trlLevel: string; // 1-9
+
+    // The Pitch (Long answers)
+    problemStatement: string;
+    solutionDescription: string;
+    techInnovation: string; // Differentiator
+    keyRisks: string;
+
+    // Market
+    targetUsers: string;
+    marketValidation: string; // Pilots, Customers
+}
+
+// NEW: Uploads
+export interface Uploads {
+    pitchDeck: string | null;
+    budgetDoc: string | null;
+    demoVideo: string | null;
 }
 
 export interface ApplicationState {
-    role: UserRole;
+    role: UserRole | null;
+    currentStep: number;
 
-    // Data Buckets
     innovator: InnovatorProfile;
     founder: FounderProfile;
+    coFounders: CoFounder[];
+
+    // NEW State
+    venture: VentureProfile;
+    uploads: Uploads;
 
     // Actions
     setRole: (role: UserRole) => void;
     updateInnovator: (fields: Partial<InnovatorProfile>) => void;
     updateFounder: (fields: Partial<FounderProfile>) => void;
+
+    addCoFounder: () => void;
+    removeCoFounder: (id: string) => void;
+    updateCoFounder: (id: string, fields: Partial<CoFounder>) => void;
+
+    updateVenture: (fields: Partial<VentureProfile>) => void;
+    updateUploads: (fields: Partial<Uploads>) => void;
+
     resetForm: () => void;
 }
 
@@ -67,42 +133,37 @@ export interface ApplicationState {
 export const useApplicationStore = create<ApplicationState>()(
     persist(
         (set) => ({
-            role: 'founder', // Default, will be overwritten by OnboardingAuthPage
+            role: null,
+            currentStep: 1,
 
-            // Initial State for Innovator
             innovator: {
-                teamName: '',
-                leadName: '',
-                email: '',
-                phone: '',
-                currentRole: '',
-                professionalStatus: '',
-                linkedinUrl: '',
-                city: '',
-                country: 'India',
-                isIncubated: null,
-                incubatorName: '',
-                hasGrants: null,
-                grantDetails: '',
-                primarySkill: '',
-                yearsExperience: ''
+                fullName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
+                currentRole: '', organization: '', city: '', country: 'India', educationLevel: '',
+                college: '', yearsExperience: '', primarySkill: '', bio: ''
             },
 
-            // Initial State for Founder (Placeholder for now)
             founder: {
-                fullName: '',
-                email: '',
-                phone: '',
-                role: '',
-                affiliation: '',
-                organization: '',
-                educationLevel: '',
-                yearsExperience: '',
-                linkedin: '',
-                bio: ''
+                fullName: '', email: '', phone: '', currentRole: '', affiliation: '',
+                organization: '', city: '', country: 'India', educationLevel: '', college: '',
+                discipline: '', yearsExperience: '', primaryStrength: '', linkedinUrl: '',
+                githubUrl: '', scholarUrl: '', portfolioUrl: '', bio: ''
             },
 
-            // Actions
+            coFounders: [],
+
+            venture: {
+                track: null,
+                organizationName: '', registrationYear: '', legalEntity: '', website: '',
+                instituteName: '', isDsirCertified: false,
+                hasFunding: false, fundingDetails: '', incubatorName: '',
+                vertical: '', techCategory: [],
+                currentStage: '', trlLevel: '',
+                problemStatement: '', solutionDescription: '', techInnovation: '', keyRisks: '',
+                targetUsers: '', marketValidation: ''
+            },
+
+            uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null },
+
             setRole: (role) => set({ role }),
 
             updateInnovator: (fields) => set((state) => ({
@@ -113,19 +174,33 @@ export const useApplicationStore = create<ApplicationState>()(
                 founder: { ...state.founder, ...fields }
             })),
 
-            resetForm: () => set((state) => ({
-                // Resetting only the active role's data could be an option, 
-                // but for safety we reset the innovator form here.
-                innovator: {
-                    teamName: '', leadName: '', email: '', phone: '', currentRole: '',
-                    professionalStatus: '', linkedinUrl: '', city: '', country: 'India',
-                    isIncubated: null, incubatorName: '', hasGrants: null, grantDetails: '',
-                    primarySkill: '', yearsExperience: ''
-                }
-            }))
+            addCoFounder: () => set((state) => ({
+                coFounders: [
+                    ...state.coFounders,
+                    { id: crypto.randomUUID(), name: '', email: '', role: '', affiliation: '', skillArea: '', isFullTime: true }
+                ]
+            })),
+
+            removeCoFounder: (id) => set((state) => ({
+                coFounders: state.coFounders.filter(c => c.id !== id)
+            })),
+
+            updateCoFounder: (id, fields) => set((state) => ({
+                coFounders: state.coFounders.map(c => c.id === id ? { ...c, ...fields } : c)
+            })),
+
+            updateVenture: (fields) => set((state) => ({
+                venture: { ...state.venture, ...fields }
+            })),
+
+            updateUploads: (fields) => set((state) => ({
+                uploads: { ...state.uploads, ...fields }
+            })),
+
+            resetForm: () => set({ role: null, currentStep: 1 })
         }),
         {
-            name: 'artpark-onboarding-storage', // Unique name for localStorage
+            name: 'artpark-onboarding-storage',
             storage: createJSONStorage(() => localStorage),
         }
     )
