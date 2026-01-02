@@ -6,6 +6,8 @@ import {
   Navigate,
 } from "react-router-dom";
 import OnboardingAuthPage from "./pages/auth/OnboardingAuthPage";
+import InnovatorApplication from "./pages/innovator/InnovatorApplication";
+import FounderApplication from "./pages/founder/FounderApplication";
 
 export default function App() {
   return (
@@ -19,6 +21,11 @@ export default function App() {
 
         {/* Future Protected Routes will go here */}
         {/* <Route path="/wizard/*" element={<WizardFlow />} /> */}
+        {/* ADD THIS ROUTE */}
+        <Route path="/apply/innovator" element={<InnovatorApplication />} />
+
+        {/* Placeholder for Founder route */}
+        <Route path="/apply/founder" element={<FounderApplication />} />
       </Routes>
     </Router>
   );

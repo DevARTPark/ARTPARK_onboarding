@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import artparkLogo from "../../assets/artpark_in_logo.jpg";
+import { useApplicationStore } from "../../store/useApplicationStore"; // <--- Import Store
 
 // Placeholder for Google Icon
 const GoogleIcon = () => (
@@ -47,9 +48,12 @@ export default function OnboardingAuthPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Hook into the global store
+  const { setRole, updateInnovator } = useApplicationStore();
+
   // State
   const [view, setView] = useState<AuthView>("selection");
-  const [role, setRole] = useState<UserRole>(null);
+  const [role, setRoleState] = useState<UserRole>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Consolidated Form Data
@@ -70,7 +74,7 @@ export default function OnboardingAuthPage() {
     if (modeParam === "login") {
       setView("login");
     } else if (typeParam === "founder" || typeParam === "innovator") {
-      setRole(typeParam as UserRole);
+      setRoleState(typeParam as UserRole);
       if (!modeParam) setView("details");
     }
   }, [searchParams]);
@@ -78,7 +82,7 @@ export default function OnboardingAuthPage() {
   // --- Handlers ---
 
   const handleRoleSelect = (selectedRole: UserRole) => {
-    setRole(selectedRole);
+    setRoleState(selectedRole);
     setView("details");
     setSearchParams({ type: selectedRole!, mode: "apply" });
   };
@@ -91,19 +95,44 @@ export default function OnboardingAuthPage() {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // 1. Set Role in Global Store
+    if (role) setRole(role);
+
+    // 2. If Innovator, save the profile details immediately
+    if (role === "innovator") {
+      updateInnovator({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        linkedinUrl: formData.linkedinUrl,
+      });
+    }
+
+    // 3. Simulate API Call (Supabase Signup)
     console.log("Creating Account via Password:", { role, ...formData });
-    setTimeout(() => setIsLoading(false), 2000);
+
+    setTimeout(() => {
+      setIsLoading(false);
+      // 4. Navigate to the correct wizard
+      if (role === "innovator") {
+        navigate("/apply/innovator");
+      } else {
+        navigate("/apply/founder");
+      }
+    }, 1500);
   };
 
   const handleGoogleLogin = () => {
     console.log("Triggering Google OAuth...");
+    // Logic for Google OAuth redirect would go here
   };
 
   const goBack = () => {
     if (view === "signup") setView("details");
     else if (view === "details") {
       setView("selection");
-      setRole(null);
+      setRoleState(null);
     } else if (view === "login") {
       setView("selection");
     }
