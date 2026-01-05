@@ -94,6 +94,11 @@ export interface VentureProfile {
     // Market
     targetUsers: string;
     marketValidation: string;
+
+    // NEW: Innovator-in-Residence Specifics (Task 5)
+    motivation: string;      // Why ARTPARK?
+    supportNeeded: string;   // Mentorship, Tech, etc.
+    commitment: string;      // Full-time vs Part-time
 }
 
 // Uploads
@@ -112,6 +117,8 @@ export interface ApplicationState {
     coFounders: CoFounder[]; // <--- THIS WAS MISSING
     venture: VentureProfile; // <--- THIS WAS MISSING
     uploads: Uploads;        // <--- THIS WAS MISSING
+    declarations: Declarations;
+
 
     // Actions
     setRole: (role: UserRole) => void;
@@ -124,8 +131,16 @@ export interface ApplicationState {
 
     updateVenture: (fields: Partial<VentureProfile>) => void;
     updateUploads: (fields: Partial<Uploads>) => void;
+    updateDeclarations: (fields: Partial<Declarations>) => void;
 
     resetForm: () => void;
+}
+
+// Declarations Interface
+export interface Declarations {
+    isAccurate: boolean;
+    agreesToTerms: boolean; // "I understand support does not guarantee funding..."
+    agreesToCommunication: boolean;
 }
 
 // --- STORE IMPLEMENTATION ---
@@ -160,10 +175,18 @@ export const useApplicationStore = create<ApplicationState>()(
                 vertical: '', techCategory: [],
                 currentStage: '', trlLevel: '',
                 problemStatement: '', solutionDescription: '', techInnovation: '', keyRisks: '',
-                targetUsers: '', marketValidation: ''
+                targetUsers: '', marketValidation: '',
+                motivation: '', supportNeeded: '', commitment: ''
             },
 
             uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null },
+
+            // Default Declarations
+            declarations: {
+                isAccurate: false,
+                agreesToTerms: false,
+                agreesToCommunication: false
+            },
 
             setRole: (role) => set({ role }),
 
@@ -196,6 +219,10 @@ export const useApplicationStore = create<ApplicationState>()(
 
             updateUploads: (fields) => set((state) => ({
                 uploads: { ...state.uploads, ...fields }
+            })),
+
+            updateDeclarations: (fields) => set((state) => ({
+                declarations: { ...state.declarations, ...fields }
             })),
 
             resetForm: () => set({ role: 'founder', currentStep: 1 })

@@ -126,5 +126,41 @@ export const INNOVATOR_FLOW: SlideConfig[] = [
                 { key: 'pitchDeck', label: 'Resume (PDF)', accept: '.pdf' }, // Reusing 'pitchDeck' slot for Resume to save store complexity, or add new field
             ]
         }
+    },
+
+    {
+        id: 'final_review',
+        sectionId: 'uploads',
+        type: 'review',
+        title: 'Review Application',
+        subtitle: 'Verify your details.',
+    },
+
+    // ... near the end of the file ...
+
+    // [NEW] SECTION K: Declarations
+    {
+        id: 'declarations',
+        sectionId: 'uploads',
+        type: 'consent',
+        title: 'Declarations & Consent',
+        subtitle: 'Final confirmation before submission.',
+        props: {
+            items: [
+                {
+                    id: 'isAccurate',
+                    label: 'I confirm that the information provided in this application is accurate and true to the best of my knowledge.'
+                },
+                {
+                    id: 'agreesToTerms',
+                    label: 'I understand that support (Innovator-in-Residence or otherwise) does not guarantee future funding or incubation beyond the program scope.'
+                },
+                {
+                    id: 'agreesToCommunication',
+                    label: 'I agree to receive official communication from ARTPARK regarding this application and future programs.'
+                }
+            ]
+        }
     }
+
 ];

@@ -7,7 +7,9 @@ export type SlideType =
     | 'essay'    // Long text areas (Problem, Solution)
     | 'list'     // Dynamic list (Co-founders)
     | 'upload'   // File upload zone
-    | 'info';    // Transition/Success screens
+    | 'info'    // Transition/Success screens
+    | 'review'
+    | 'consent';
 
 export interface InputConfig {
     label: string;
@@ -50,6 +52,10 @@ export interface SlideConfig {
             key: string;
             label: string;
             accept: string
+        }[];
+        items?: {
+            id: string;
+            label: string;
         }[];
     };
 }
