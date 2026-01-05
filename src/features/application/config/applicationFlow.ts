@@ -1,7 +1,7 @@
 import type { SlideConfig } from '../types/SlideTypes';
 import {
     Building2, GraduationCap, Lightbulb,
-    Activity, Tractor, Zap, Cpu, Radio, Globe, ShieldCheck
+    Activity, Tractor, Zap, Cpu, Radio, Globe, ShieldCheck, Clock, Briefcase
 } from 'lucide-react';
 
 export const APPLICATION_FLOW: SlideConfig[] = [
@@ -174,6 +174,48 @@ export const APPLICATION_FLOW: SlideConfig[] = [
         }
     },
 
+    // [NEW] Branch C Extension: Motivation (PDF Section I)
+    {
+        id: 'iir_motivation',
+        sectionId: 'venture',
+        type: 'essay',
+        title: 'Motivation & Needs',
+        subtitle: 'Why ARTPARK and what do you need?',
+        condition: (data) => data.venture.track === 'innovator_residence',
+        props: {
+            questions: [
+                {
+                    label: 'Why do you want to pursue this at ARTPARK? (Max 300 chars)',
+                    field: 'venture.motivation',
+                    minChars: 20,
+                    placeholder: 'Explain your fit with the ecosystem...'
+                },
+                {
+                    label: 'Support Needed (Technical, Mentorship, Manpower)',
+                    field: 'venture.supportNeeded',
+                    placeholder: 'What specific resources will help you succeed?'
+                }
+            ]
+        }
+    },
+
+    // [NEW] Branch C Extension: Commitment (PDF Section I.30)
+    {
+        id: 'iir_commitment',
+        sectionId: 'venture',
+        type: 'option',
+        title: 'Time Commitment',
+        subtitle: 'Are you willing to engage full-time?',
+        condition: (data) => data.venture.track === 'innovator_residence',
+        props: {
+            options: [
+                { id: 'Yes, Full-time', label: 'Yes, Full-time', icon: Clock },
+                { id: 'Near Full-time', label: 'Near Full-time', icon: Clock },
+                { id: 'Part-time', label: 'Part-time / Depends', icon: Briefcase },
+            ]
+        }
+    },
+
     // --- COMMON QUESTIONS (All Tracks) ---
     {
         id: 'vertical',
@@ -280,6 +322,14 @@ export const APPLICATION_FLOW: SlideConfig[] = [
             ]
         }
     },
+    // [NEW] REVIEW SLIDE
+    {
+        id: 'final_review',
+        sectionId: 'uploads',
+        type: 'review',
+        title: 'Review Application',
+        subtitle: 'Verify your details before final submission.',
+    },
     {
         id: 'declarations',
         sectionId: 'uploads',
@@ -289,6 +339,31 @@ export const APPLICATION_FLOW: SlideConfig[] = [
         props: {
             options: [
                 { id: 'confirm', label: 'I confirm all information is accurate', icon: ShieldCheck },
+            ]
+        }
+    },
+
+    // [NEW] SECTION K: Declarations
+    {
+        id: 'declarations',
+        sectionId: 'uploads',
+        type: 'consent',
+        title: 'Declarations & Consent',
+        subtitle: 'Final confirmation before submission.',
+        props: {
+            items: [
+                {
+                    id: 'isAccurate',
+                    label: 'I confirm that the information provided in this application is accurate and true to the best of my knowledge.'
+                },
+                {
+                    id: 'agreesToTerms',
+                    label: 'I understand that support (Innovator-in-Residence or otherwise) does not guarantee future funding or incubation beyond the program scope.'
+                },
+                {
+                    id: 'agreesToCommunication',
+                    label: 'I agree to receive official communication from ARTPARK regarding this application and future programs.'
+                }
             ]
         }
     }

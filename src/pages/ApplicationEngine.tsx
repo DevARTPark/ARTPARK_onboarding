@@ -16,6 +16,8 @@ import EssaySlide from "../components/slides/EssaySlide";
 import ListSlide from "../components/slides/ListSlide";
 import UploadSlide from "../components/slides/UploadSlide";
 import InfoSlide from "../components/slides/InfoSlide";
+import ReviewSlide from "../components/slides/ReviewSlide";
+import ConsentSlide from "../components/slides/ConsentSlide";
 
 // --- PROPS INTERFACE ---
 interface ApplicationEngineProps {
@@ -66,6 +68,8 @@ export default function ApplicationEngine({
     else if (domain === "venture") store.updateVenture({ [field]: value });
     else if (domain === "innovator") store.updateInnovator({ [field]: value });
     else if (domain === "uploads") store.updateUploads({ [field]: value });
+    else if (domain === "declarations")
+      store.updateDeclarations({ [field]: value });
   };
 
   const getValue = (path?: string) => {
@@ -127,6 +131,14 @@ export default function ApplicationEngine({
         );
       case "upload":
         return true; // Optional for Innovator for now
+      case "consent":
+        // Check if all checkboxes defined in props are true in the store
+        // We assume generic 'items' prop for consent slide
+        const requiredKeys = s.props?.items?.map((i: any) => i.id) || [];
+        return requiredKeys.every(
+          (key: string) =>
+            store.declarations[key as keyof typeof store.declarations]
+        );
       default:
         return true;
     }
@@ -154,6 +166,7 @@ export default function ApplicationEngine({
         else if (slide.id === "vertical") field = "venture.vertical";
         else if (slide.id === "tech_category") field = "venture.techCategory";
         else if (slide.id === "trl_level") field = "venture.trlLevel";
+        else if (slide.id === "iir_commitment") field = "venture.commitment";
 
         return (
           <OptionSlide
@@ -179,6 +192,24 @@ export default function ApplicationEngine({
             files={slide.props?.files || []}
             values={store}
             onUpdate={(key, val) => store.updateUploads({ [key]: val })}
+          />
+        );
+      case "review":
+        return <ReviewSlide data={store} />;
+      case "consent":
+        return (
+          <ConsentSlide
+            // FIX: Cast the generic items to the specific type required by ConsentSlide
+            items={
+              (slide.props?.items || []) as Array<{
+                id: keyof typeof store.declarations;
+                label: string;
+              }>
+            }
+            values={store.declarations}
+            onUpdate={(field, val) =>
+              store.updateDeclarations({ [field]: val })
+            }
           />
         );
       default:
