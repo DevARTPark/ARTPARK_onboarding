@@ -131,7 +131,14 @@ export default function ReviewSlide({ data }: ReviewSlideProps) {
         )}
 
         <Row label="Vertical" value={data.venture.vertical} />
-        <Row label="Tech Focus" value={data.venture.techCategory.join(", ")} />
+        <Row
+          label="Tech Focus"
+          value={
+            Array.isArray(data.venture.techCategory)
+              ? data.venture.techCategory.join(", ")
+              : data.venture.techCategory || "-"
+          }
+        />
       </Section>
 
       {/* 4. The Pitch (Long Text) */}
