@@ -3,11 +3,12 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 // --- TYPES ---
 export type UserRole = 'founder' | 'innovator';
-export type VentureTrack = 'startup' | 'researcher';
+export type VentureTrack = 'startup' | 'researcher' | 'innovator_residence';
 
 // Innovator Profile (Page 10)
 export interface InnovatorProfile {
-    fullName: string;
+    teamName: string;
+    leadName: string;
     email: string;
     phone: string;
     linkedinUrl: string;
@@ -16,11 +17,12 @@ export interface InnovatorProfile {
     organization: string;
     city: string;
     country: string;
-    educationLevel: string;
-    college: string;
-    yearsExperience: string;
+    isIncubated: boolean | null;
+    incubatorName: string;
+    hasGrants: boolean | null;
+    grantDetails: string;
     primarySkill: string;
-    bio: string;
+    yearsExperience: string;
 }
 
 // Co-Founder Structure (Page 2)
@@ -56,14 +58,14 @@ export interface FounderProfile {
     bio: string;
 }
 
-// NEW: Venture Profile (Pages 4-9)
+// Venture Profile (Pages 4-9)
 export interface VentureProfile {
     track: VentureTrack | null;
 
     // Identity
-    organizationName: string; // Startup Name or Project Name
-    registrationYear: string; // For startups
-    legalEntity: string; // Pvt Ltd, LLP, etc.
+    organizationName: string;
+    registrationYear: string;
+    legalEntity: string;
     website: string;
 
     // Institute (Researcher only)
@@ -72,29 +74,29 @@ export interface VentureProfile {
 
     // Funding
     hasFunding: boolean;
-    fundingDetails: string; // Investors or Grants
+    fundingDetails: string;
     incubatorName: string;
 
     // Tech Focus
-    vertical: string; // Health, Mobility, etc.
-    techCategory: string[]; // AI, Robotics (Max 2)
+    vertical: string;
+    techCategory: string[];
 
     // Maturity
-    currentStage: string; // Prototype, MVP, Pilot
-    trlLevel: string; // 1-9
+    currentStage: string;
+    trlLevel: string;
 
-    // The Pitch (Long answers)
+    // The Pitch
     problemStatement: string;
     solutionDescription: string;
-    techInnovation: string; // Differentiator
+    techInnovation: string;
     keyRisks: string;
 
     // Market
     targetUsers: string;
-    marketValidation: string; // Pilots, Customers
+    marketValidation: string;
 }
 
-// NEW: Uploads
+// Uploads
 export interface Uploads {
     pitchDeck: string | null;
     budgetDoc: string | null;
@@ -107,11 +109,9 @@ export interface ApplicationState {
 
     innovator: InnovatorProfile;
     founder: FounderProfile;
-    coFounders: CoFounder[];
-
-    // NEW State
-    venture: VentureProfile;
-    uploads: Uploads;
+    coFounders: CoFounder[]; // <--- THIS WAS MISSING
+    venture: VentureProfile; // <--- THIS WAS MISSING
+    uploads: Uploads;        // <--- THIS WAS MISSING
 
     // Actions
     setRole: (role: UserRole) => void;
@@ -133,13 +133,14 @@ export interface ApplicationState {
 export const useApplicationStore = create<ApplicationState>()(
     persist(
         (set) => ({
-            role: null,
+            role: 'founder',
             currentStep: 1,
 
             innovator: {
-                fullName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
-                currentRole: '', organization: '', city: '', country: 'India', educationLevel: '',
-                college: '', yearsExperience: '', primarySkill: '', bio: ''
+                teamName: '', leadName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
+                currentRole: '', organization: '', city: '', country: 'India',
+                isIncubated: null, incubatorName: '', hasGrants: null, grantDetails: '',
+                primarySkill: '', yearsExperience: ''
             },
 
             founder: {
@@ -197,7 +198,7 @@ export const useApplicationStore = create<ApplicationState>()(
                 uploads: { ...state.uploads, ...fields }
             })),
 
-            resetForm: () => set({ role: null, currentStep: 1 })
+            resetForm: () => set({ role: 'founder', currentStep: 1 })
         }),
         {
             name: 'artpark-onboarding-storage',
