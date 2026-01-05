@@ -173,7 +173,20 @@ export default function ApplicationEngine({
             options={slide.props?.options || []}
             selected={getValue(field)}
             multiSelect={slide.props?.multiSelect}
-            onSelect={(val) => handleUpdate(field, val)}
+            onSelect={(val: string) => {
+              // FIX: Handle Multi-Select Array Logic
+              if (slide.props?.multiSelect) {
+                const currentArray = (getValue(field) as string[]) || [];
+                // If value exists, remove it. If not, add it.
+                const newValue = currentArray.includes(val)
+                  ? currentArray.filter((item) => item !== val)
+                  : [...currentArray, val];
+                handleUpdate(field, newValue);
+              } else {
+                // Single Select
+                handleUpdate(field, val);
+              }
+            }}
           />
         );
       case "essay":
