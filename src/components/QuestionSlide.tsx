@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft } from "lucide-react"; // <--- Import ArrowLeft
+import { ArrowRight, ArrowLeft } from "lucide-react";
 
 interface QuestionSlideProps {
   isActive: boolean;
@@ -8,8 +8,8 @@ interface QuestionSlideProps {
   subtitle?: string;
   children: React.ReactNode;
   onNext?: () => void;
-  onBack?: () => void; // <--- NEW PROP
-  canProceed: boolean;
+  onBack?: () => void;
+  canProceed?: boolean; // Optional, defaults to true if onNext is present
 }
 
 export default function QuestionSlide({
@@ -18,20 +18,20 @@ export default function QuestionSlide({
   subtitle,
   children,
   onNext,
-  onBack, // <--- Destructure
-  canProceed,
+  onBack,
+  canProceed = true,
 }: QuestionSlideProps) {
-  // Enter key listener (only for Next)
+  // Handle 'Enter' key for navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isActive && canProceed && e.key === "Enter" && onNext) {
         const target = e.target as HTMLElement;
+        // Prevent submitting when typing in textareas
         if (target.tagName !== "TEXTAREA") {
           onNext();
         }
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isActive, canProceed, onNext]);
@@ -44,33 +44,35 @@ export default function QuestionSlide({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-6 w-full max-w-2xl mx-auto"
     >
+      {/* Header Section */}
       <div className="space-y-2">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-lg text-gray-500 font-medium">{subtitle}</p>
+          <p className="text-lg text-gray-500 font-medium leading-relaxed">
+            {subtitle}
+          </p>
         )}
       </div>
 
-      <div className="py-4">{children}</div>
+      {/* Main Content Area */}
+      <div className="py-2">{children}</div>
 
-      {/* BUTTON FOOTER */}
-      <div className="flex items-center gap-4 pt-2">
-        {/* BACK BUTTON */}
+      {/* Navigation Footer */}
+      <div className="flex items-center gap-4 pt-4">
         {onBack && (
           <button
             onClick={onBack}
             className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all hover:-translate-x-1"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </button>
         )}
 
-        {/* NEXT BUTTON */}
         {onNext && (
           <button
             onClick={onNext}
@@ -84,14 +86,13 @@ export default function QuestionSlide({
               }
             `}
           >
-            OK
+            Next
             <ArrowRight className="w-5 h-5" />
           </button>
         )}
 
-        {/* HELPER TEXT */}
         {onNext && canProceed && (
-          <span className="text-xs text-gray-400 hidden md:inline-block ml-2">
+          <span className="text-xs text-gray-400 hidden md:inline-block ml-2 animate-pulse">
             press <strong>Enter ↵</strong>
           </span>
         )}

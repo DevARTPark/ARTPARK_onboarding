@@ -6,26 +6,47 @@ import {
   Navigate,
 } from "react-router-dom";
 import OnboardingAuthPage from "./pages/auth/OnboardingAuthPage";
-import InnovatorApplication from "./pages/innovator/InnovatorApplication";
-import FounderApplication from "./pages/founder/FounderApplication";
+
+// 1. Import the Unified Engine
+import ApplicationEngine from "./pages/ApplicationEngine";
+
+// 2. Import the Configurations
+import { APPLICATION_FLOW } from "./features/application/config/applicationFlow";
+import { INNOVATOR_FLOW } from "./features/application/config/innovatorFlow";
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Redirect root to login page which handles role selection */}
+        {/* Redirect root to login page */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* The Main Entry Page */}
+        {/* Login / Role Selection */}
         <Route path="/login" element={<OnboardingAuthPage />} />
 
-        {/* Future Protected Routes will go here */}
-        {/* <Route path="/wizard/*" element={<WizardFlow />} /> */}
-        {/* ADD THIS ROUTE */}
-        <Route path="/apply/innovator" element={<InnovatorApplication />} />
+        {/* FOUNDER TRACK */}
+        {/* Uses the generic engine with the Founder questions */}
+        <Route
+          path="/apply/founder"
+          element={
+            <ApplicationEngine
+              flowConfig={APPLICATION_FLOW}
+              trackTitle="Founder Track"
+            />
+          }
+        />
 
-        {/* Placeholder for Founder route */}
-        <Route path="/apply/founder" element={<FounderApplication />} />
+        {/* INNOVATOR TRACK */}
+        {/* Uses the same engine but with Innovator questions */}
+        <Route
+          path="/apply/innovator"
+          element={
+            <ApplicationEngine
+              flowConfig={INNOVATOR_FLOW}
+              trackTitle="Innovator Track"
+            />
+          }
+        />
       </Routes>
     </Router>
   );

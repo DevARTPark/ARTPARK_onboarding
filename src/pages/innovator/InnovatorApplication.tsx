@@ -14,9 +14,10 @@ export default function InnovatorApplication() {
   const progress = ((currentSlide + 1) / TOTAL_SLIDES) * 100;
 
   const next = () => setCurrentSlide((prev) => prev + 1);
+  const back = () => setCurrentSlide((prev) => Math.max(0, prev - 1));
 
   return (
-    <ConversationalLayout progress={progress}>
+    <ConversationalLayout progress={progress} trackTitle="Innovator Track">
       <AnimatePresence mode="wait">
         {/* SLIDE 0: INTRO */}
         <QuestionSlide
@@ -28,6 +29,7 @@ export default function InnovatorApplication() {
           subtitle="We just need a few details to match you with the right opportunities."
           canProceed={true}
           onNext={next}
+          onBack={undefined}
         >
           <div className="p-6 bg-blue-50 rounded-xl border border-blue-100 text-blue-800">
             <p>
@@ -43,7 +45,8 @@ export default function InnovatorApplication() {
           title="Which describes you best?"
           subtitle="This helps us understand your availability."
           canProceed={!!innovator.professionalStatus}
-          onNext={next} // No button needed, auto-advance on selection
+          onNext={next}
+          onBack={back} // No button needed, auto-advance on selection
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -80,6 +83,7 @@ export default function InnovatorApplication() {
           subtitle="Your designation and organization."
           canProceed={!!innovator.currentRole && !!innovator.organization}
           onNext={next}
+          onBack={back}
         >
           <div className="space-y-4">
             <Input
@@ -106,6 +110,7 @@ export default function InnovatorApplication() {
           subtitle="We support innovators across India."
           canProceed={!!innovator.city}
           onNext={next}
+          onBack={back}
         >
           <Input
             autoFocus
@@ -124,6 +129,7 @@ export default function InnovatorApplication() {
           subtitle="Pick your primary area of expertise."
           canProceed={!!innovator.primarySkill}
           onNext={next}
+          onBack={back}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
@@ -162,6 +168,7 @@ export default function InnovatorApplication() {
           onNext={() =>
             alert("Application Submitted! Redirect to Dashboard...")
           }
+          onBack={back}
         >
           <textarea
             autoFocus
