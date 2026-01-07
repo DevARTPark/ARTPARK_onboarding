@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { Check } from "lucide-react";
 
 interface Option {
@@ -18,15 +18,12 @@ interface OptionSlideProps {
 export default function OptionSlide({
   options,
   selected,
-  multiSelect = false,
   onSelect,
 }: OptionSlideProps) {
   const isSelected = (id: string) => {
     if (Array.isArray(selected)) return selected.includes(id);
     return selected === id;
   };
-
-  const _isMulti = multiSelect;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
