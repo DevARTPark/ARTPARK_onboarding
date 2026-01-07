@@ -5,8 +5,6 @@ import {
   Users,
   ArrowRight,
   ArrowLeft,
-  Linkedin,
-  Phone,
   User,
   Mail,
   Lock,
@@ -17,31 +15,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import artparkLogo from "../../assets/artpark_in_logo.jpg";
-import { useApplicationStore } from "../../store/useApplicationStore"; // <--- Import Store
+import { useApplicationStore } from "../../store/useApplicationStore";
 
-// Placeholder for Google Icon
-const GoogleIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path
-      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      fill="#4285F4"
-    />
-    <path
-      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      fill="#34A853"
-    />
-    <path
-      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      fill="#FBBC05"
-    />
-    <path
-      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      fill="#EA4335"
-    />
-  </svg>
-);
-
-type AuthView = "selection" | "login" | "details" | "signup";
+type AuthView = "selection" | "login" | "signup"; // Removed 'details'
 type UserRole = "founder" | "innovator" | null;
 
 export default function OnboardingAuthPage() {
@@ -49,19 +25,17 @@ export default function OnboardingAuthPage() {
   const navigate = useNavigate();
 
   // Hook into the global store
-  const { setRole, updateInnovator } = useApplicationStore();
+  const { setRole, updateInnovator, updateFounder } = useApplicationStore();
 
   // State
   const [view, setView] = useState<AuthView>("selection");
   const [role, setRoleState] = useState<UserRole>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Consolidated Form Data
+  // Consolidated Form Data (Removed Phone/LinkedIn)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    linkedinUrl: "",
-    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -75,7 +49,7 @@ export default function OnboardingAuthPage() {
       setView("login");
     } else if (typeParam === "founder" || typeParam === "innovator") {
       setRoleState(typeParam as UserRole);
-      if (!modeParam) setView("details");
+      if (!modeParam) setView("signup"); // Go straight to merged signup
     }
   }, [searchParams]);
 
@@ -83,34 +57,38 @@ export default function OnboardingAuthPage() {
 
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRoleState(selectedRole);
-    setView("details");
+    setView("signup"); // Skip 'details', go to merged view
     setSearchParams({ type: selectedRole!, mode: "apply" });
   };
 
-  const handleDetailsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setView("signup");
-  };
-
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      setIsLoading(false);
+      return;
+    }
 
     // 1. Set Role in Global Store
     if (role) setRole(role);
 
-    // 2. If Innovator, save the profile details immediately
+    // 2. Pre-fill Store with Name & Email
     if (role === "innovator") {
       updateInnovator({
+        leadName: formData.fullName, // Mapped to leadName for Innovator
+        email: formData.email,
+      });
+    } else {
+      updateFounder({
         fullName: formData.fullName,
         email: formData.email,
-        phone: formData.phone,
-        linkedinUrl: formData.linkedinUrl,
       });
     }
 
-    // 3. Simulate API Call (Supabase Signup)
-    console.log("Creating Account via Password:", { role, ...formData });
+    // 3. Simulate API Call (Supabase/Auth Signup)
+    console.log("Creating Account:", { role, email: formData.email });
 
     setTimeout(() => {
       setIsLoading(false);
@@ -123,14 +101,8 @@ export default function OnboardingAuthPage() {
     }, 1500);
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Triggering Google OAuth...");
-    // Logic for Google OAuth redirect would go here
-  };
-
   const goBack = () => {
-    if (view === "signup") setView("details");
-    else if (view === "details") {
+    if (view === "signup") {
       setView("selection");
       setRoleState(null);
     } else if (view === "login") {
@@ -179,24 +151,19 @@ export default function OnboardingAuthPage() {
         </div>
 
         {/* Right Side: The Form Card */}
-        <motion.div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-md mx-auto overflow-hidden relative h-[550px] flex flex-col">
+        <motion.div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-md mx-auto overflow-hidden relative h-[570px] flex flex-col">
           {/* Progress Bar */}
           <div className="h-1.5 w-full bg-gray-100 shrink-0">
             <motion.div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
               initial={{ width: "0%" }}
               animate={{
-                width:
-                  view === "selection"
-                    ? "20%"
-                    : view === "details"
-                    ? "60%"
-                    : "100%",
+                width: view === "selection" ? "30%" : "100%",
               }}
             />
           </div>
 
-          {/* Content Area - Added 'justify-center' to vertically align content */}
+          {/* Content Area */}
           <div className="p-8 flex-1 overflow-y-auto flex flex-col justify-center">
             <AnimatePresence mode="wait">
               {/* STEP 1: ROLE SELECTION */}
@@ -252,22 +219,22 @@ export default function OnboardingAuthPage() {
                 </motion.div>
               )}
 
-              {/* STEP 2: BASIC DETAILS + EMAIL */}
-              {view === "details" && (
+              {/* STEP 2: MERGED SIGN UP (Name, Email, Password) */}
+              {view === "signup" && (
                 <motion.div
-                  key="details"
+                  key="signup"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="w-full"
                 >
                   <HeaderWithBack
-                    title="Tell us about you"
-                    subtitle="We'll use this to personalize your application"
+                    title="Create Account"
+                    subtitle="Enter your details to get started"
                     onBack={goBack}
                   />
 
-                  <form onSubmit={handleDetailsSubmit} className="space-y-4">
+                  <form onSubmit={handleSignupSubmit} className="space-y-4">
                     <Input
                       label="Full Name"
                       placeholder="e.g. Rahul Sharma"
@@ -291,83 +258,6 @@ export default function OnboardingAuthPage() {
                       leftIcon={<Mail className="w-4 h-4" />}
                     />
 
-                    <Input
-                      label="LinkedIn Profile"
-                      placeholder="linkedin.com/in/username"
-                      required
-                      value={formData.linkedinUrl}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          linkedinUrl: e.target.value,
-                        })
-                      }
-                      leftIcon={<Linkedin className="w-4 h-4" />}
-                    />
-
-                    <Input
-                      label="Phone Number"
-                      placeholder="+91 98765 43210"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      leftIcon={<Phone className="w-4 h-4" />}
-                    />
-
-                    <Button
-                      className="w-full mt-4"
-                      size="lg"
-                      rightIcon={<ArrowRight className="w-4 h-4" />}
-                    >
-                      Continue
-                    </Button>
-                  </form>
-                </motion.div>
-              )}
-
-              {/* STEP 3: ACCOUNT SECURITY */}
-              {view === "signup" && (
-                <motion.div
-                  key="signup"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="w-full"
-                >
-                  <HeaderWithBack
-                    title="Secure your account"
-                    subtitle={`Finish setting up account for ${formData.email}`}
-                    onBack={goBack}
-                  />
-
-                  <div className="mb-6">
-                    <button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      className="w-full flex items-center justify-center space-x-3 bg-white border border-gray-300 rounded-lg p-3 hover:bg-gray-50 transition-colors shadow-sm"
-                    >
-                      <GoogleIcon />
-                      <span className="font-medium text-gray-700">
-                        Continue with Google
-                      </span>
-                    </button>
-                  </div>
-
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-white text-gray-500">
-                        Or create a password
-                      </span>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <Input
                       label="Create Password"
                       type="password"
@@ -452,29 +342,6 @@ export default function OnboardingAuthPage() {
                     <Button className="w-full mt-2" size="lg">
                       Sign In
                     </Button>
-
-                    <div className="mt-4">
-                      <div className="relative mb-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="px-2 bg-white text-gray-500">
-                            Or continue with
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 rounded-lg p-2.5 hover:bg-gray-50 transition-colors shadow-sm"
-                      >
-                        <GoogleIcon />
-                        <span className="font-medium text-gray-700 text-sm">
-                          Google
-                        </span>
-                      </button>
-                    </div>
                   </form>
 
                   <div className="mt-6 text-center text-sm">

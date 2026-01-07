@@ -26,6 +26,9 @@ export const APPLICATION_FLOW: SlideConfig[] = [
                 { label: 'Email Address', field: 'founder.email', type: 'email', required: true },
                 { label: 'Phone Number', field: 'founder.phone', type: 'tel', required: true },
                 { label: 'Current Role', field: 'founder.currentRole', placeholder: 'e.g. CEO / Researcher' },
+                // NEW: Added City and Country (PDF Section A.7)
+                { label: 'City', field: 'founder.city', required: true },
+                { label: 'Country', field: 'founder.country', placeholder: 'India' },
             ]
         }
     },
@@ -39,6 +42,8 @@ export const APPLICATION_FLOW: SlideConfig[] = [
             inputs: [
                 { label: 'Education Level', field: 'founder.educationLevel', placeholder: 'e.g. PhD, Masters' },
                 { label: 'College / University', field: 'founder.college' },
+                // NEW: Added Discipline (PDF Section B.10)
+                { label: 'Field / Discipline', field: 'founder.discipline', placeholder: 'e.g. Computer Science' },
                 { label: 'Years of Experience', field: 'founder.yearsExperience', type: 'number' },
                 { label: 'Primary Strength', field: 'founder.primaryStrength', placeholder: 'e.g. AI, Robotics, Business' },
             ]
@@ -54,6 +59,8 @@ export const APPLICATION_FLOW: SlideConfig[] = [
             inputs: [
                 { label: 'LinkedIn Profile', field: 'founder.linkedinUrl', required: true },
                 { label: 'GitHub / Portfolio', field: 'founder.portfolioUrl' },
+                // NEW: Added Scholar (PDF Section C.15)
+                { label: 'Google Scholar / Publications', field: 'founder.scholarUrl' },
             ]
         }
     },
@@ -75,6 +82,25 @@ export const APPLICATION_FLOW: SlideConfig[] = [
         type: 'list',
         title: 'Co-Founders',
         subtitle: 'Are you building this alone or with a team?',
+    },
+    // NEW SLIDE: Team History (PDF Section E)
+    {
+        id: 'team_structure',
+        sectionId: 'team',
+        type: 'essay',
+        title: 'Team Structure',
+        subtitle: 'History and Equity',
+        // Only show this slide if there are co-founders
+        condition: (data) => data.coFounders.length > 0,
+        props: {
+            questions: [
+                {
+                    label: 'How long have the founders known each other and in what capacity?',
+                    field: 'venture.teamHistory', // Ensure this field is added to store type
+                    minChars: 20
+                }
+            ]
+        }
     },
 
     // --- SECTION 2: TRACK SELECTION (The Fork) ---
@@ -319,6 +345,8 @@ export const APPLICATION_FLOW: SlideConfig[] = [
                 { key: 'pitchDeck', label: 'Pitch Deck (PDF)', accept: '.pdf' },
                 { key: 'budgetDoc', label: '1-Year Budget Plan', accept: '.pdf,.xlsx' },
                 { key: 'demoVideo', label: 'Demo Video (Link/MP4)', accept: 'video/*' },
+                // NEW: Added Supporting Material (PDF Section H.25)
+                { key: 'otherDocs', label: 'Supporting Material (Zip/PDF)', accept: '.zip,.pdf,.rar' },
             ]
         }
     },
@@ -330,19 +358,6 @@ export const APPLICATION_FLOW: SlideConfig[] = [
         title: 'Review Application',
         subtitle: 'Verify your details before final submission.',
     },
-    {
-        id: 'declarations',
-        sectionId: 'uploads',
-        type: 'option', // Using option as a simple "Yes I agree" button for now
-        title: 'Declarations',
-        subtitle: 'Confirm accuracy and IP understanding.',
-        props: {
-            options: [
-                { id: 'confirm', label: 'I confirm all information is accurate', icon: ShieldCheck },
-            ]
-        }
-    },
-
     // [NEW] SECTION K: Declarations
     {
         id: 'declarations',

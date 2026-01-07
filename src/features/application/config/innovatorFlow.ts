@@ -1,5 +1,5 @@
 import type { SlideConfig } from '../types/SlideTypes';
-import { User, MapPin, Briefcase, Award, Zap, FileText } from 'lucide-react';
+import { User, Briefcase, Award, Zap } from 'lucide-react';
 
 export const INNOVATOR_FLOW: SlideConfig[] = [
     // --- SECTION 1: IDENTITY ---
@@ -18,7 +18,8 @@ export const INNOVATOR_FLOW: SlideConfig[] = [
         subtitle: 'Tell us a bit about yourself.',
         props: {
             inputs: [
-                { label: 'Full Name', field: 'innovator.fullName', required: true },
+                // FIX: Changed 'innovator.fullName' to 'innovator.leadName' to match Store
+                { label: 'Full Name', field: 'innovator.leadName', required: true },
                 { label: 'Email Address', field: 'innovator.email', type: 'email', required: true },
                 { label: 'Phone Number', field: 'innovator.phone', type: 'tel', required: true },
                 { label: 'LinkedIn Profile', field: 'innovator.linkedinUrl' },
@@ -123,7 +124,7 @@ export const INNOVATOR_FLOW: SlideConfig[] = [
         subtitle: 'Upload your CV or Portfolio.',
         props: {
             files: [
-                { key: 'pitchDeck', label: 'Resume (PDF)', accept: '.pdf' }, // Reusing 'pitchDeck' slot for Resume to save store complexity, or add new field
+                { key: 'pitchDeck', label: 'Resume (PDF)', accept: '.pdf' },
             ]
         }
     },
@@ -136,9 +137,7 @@ export const INNOVATOR_FLOW: SlideConfig[] = [
         subtitle: 'Verify your details.',
     },
 
-    // ... near the end of the file ...
-
-    // [NEW] SECTION K: Declarations
+    // --- SECTION 6: DECLARATIONS ---
     {
         id: 'declarations',
         sectionId: 'uploads',
@@ -162,5 +161,4 @@ export const INNOVATOR_FLOW: SlideConfig[] = [
             ]
         }
     }
-
 ];

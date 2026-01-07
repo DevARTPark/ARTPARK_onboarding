@@ -95,6 +95,9 @@ export interface VentureProfile {
     targetUsers: string;
     marketValidation: string;
 
+    // Team Structure (Section E - Missing in previous version)
+    teamHistory: string;
+
     // NEW: Innovator-in-Residence Specifics (Task 5)
     motivation: string;      // Why ARTPARK?
     supportNeeded: string;   // Mentorship, Tech, etc.
@@ -106,6 +109,7 @@ export interface Uploads {
     pitchDeck: string | null;
     budgetDoc: string | null;
     demoVideo: string | null;
+    otherDocs: string | null; // (Section H - Missing in previous version)
 }
 
 export interface ApplicationState {
@@ -114,9 +118,9 @@ export interface ApplicationState {
 
     innovator: InnovatorProfile;
     founder: FounderProfile;
-    coFounders: CoFounder[]; // <--- THIS WAS MISSING
-    venture: VentureProfile; // <--- THIS WAS MISSING
-    uploads: Uploads;        // <--- THIS WAS MISSING
+    coFounders: CoFounder[];
+    venture: VentureProfile;
+    uploads: Uploads;
     declarations: Declarations;
 
 
@@ -176,10 +180,11 @@ export const useApplicationStore = create<ApplicationState>()(
                 currentStage: '', trlLevel: '',
                 problemStatement: '', solutionDescription: '', techInnovation: '', keyRisks: '',
                 targetUsers: '', marketValidation: '',
+                teamHistory: '', // Default value
                 motivation: '', supportNeeded: '', commitment: ''
             },
 
-            uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null },
+            uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null, otherDocs: null }, // Default value
 
             // Default Declarations
             declarations: {
