@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Info } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import type { Declarations } from "../../store/useApplicationStore";
 
 interface ConsentItem {
@@ -21,7 +21,7 @@ export default function ConsentSlide({
   return (
     <div className="space-y-6">
       <div className="p-4 bg-purple-50 text-purple-900 rounded-xl border border-purple-100 flex gap-3">
-        <ShieldCheck className="w-6 h-6 flex-shrink-0" />
+        <ShieldCheck className="w-6 h-6 shrink-0" />
         <p className="text-sm">
           These declarations are legally binding. Please read carefully before
           confirming.

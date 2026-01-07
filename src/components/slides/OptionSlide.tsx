@@ -26,6 +26,8 @@ export default function OptionSlide({
     return selected === id;
   };
 
+  const _isMulti = multiSelect;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {options.map((option) => {

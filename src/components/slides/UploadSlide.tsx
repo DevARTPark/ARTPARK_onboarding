@@ -1,5 +1,5 @@
 import React from "react";
-import { UploadCloud, FileText, X, CheckCircle2 } from "lucide-react";
+import { UploadCloud, X, CheckCircle2 } from "lucide-react";
 
 interface FileConfig {
   key: string;
@@ -58,7 +58,7 @@ export default function UploadSlide({
 
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900">{f.label}</h4>
-                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                <p className="text-xs text-gray-500 truncate max-w-50">
                   {fileName || "Max 10MB • Drag & drop or click"}
                 </p>
               </div>

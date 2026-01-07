@@ -23,6 +23,7 @@ export interface InnovatorProfile {
     grantDetails: string;
     primarySkill: string;
     yearsExperience: string;
+    bio: string;
 }
 
 // Co-Founder Structure (Page 2)
@@ -159,7 +160,8 @@ export const useApplicationStore = create<ApplicationState>()(
                 teamName: '', leadName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
                 currentRole: '', organization: '', city: '', country: 'India',
                 isIncubated: null, incubatorName: '', hasGrants: null, grantDetails: '',
-                primarySkill: '', yearsExperience: ''
+                primarySkill: '', yearsExperience: '',
+                bio: ''
             },
 
             founder: {
