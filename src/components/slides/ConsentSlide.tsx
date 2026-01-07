@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { ShieldCheck } from "lucide-react";
 import type { Declarations } from "../../store/useApplicationStore";
 

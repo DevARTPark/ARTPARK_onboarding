@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { Rocket, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 interface InfoSlideProps {
