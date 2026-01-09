@@ -1,9 +1,22 @@
 import React from 'react';
 import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function ApplicationSuccess() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Retrieve user ID from state (passed from ApplicationEngine) or fallback to local storage
+  const userId = location.state?.userId || JSON.parse(localStorage.getItem("artpark_user") || "{}").id;
+
+  const handleStartAssessment = () => {
+    if (userId) {
+      navigate(`/assessment/${userId}`);
+    } else {
+      // Fallback if ID is missing (should rarely happen)
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
@@ -30,28 +43,26 @@ export default function ApplicationSuccess() {
             </div>
           </div>
           <p className="text-sm text-blue-700 mt-4 pl-12 leading-relaxed">
-            Please check your inbox for a link to the <strong>Innovation Index Assessment</strong>. 
+            Please proceed immediately to the <strong>Innovation Index Assessment</strong>.
             <br/><br/>
             <span className="font-semibold">Note:</span> Your application is not complete until ALL team members submit this assessment.
           </p>
         </div>
 
-        {/* MOCK DEBUG BUTTON - To simulate clicking the email link */}
-        <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-           <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-bold">For Testing Only</p>
-           <button
-             onClick={() => navigate('/assessment/mock-founder-id-123')}
-             className="text-indigo-600 text-sm font-medium hover:underline"
-           >
-             (Simulate clicking email link)
-           </button>
-        </div>
-
+        {/* Updated Button to go to Assessment */}
         <button 
-          onClick={() => navigate('/')}
-          className="w-full py-3 px-6 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-medium"
+          onClick={handleStartAssessment}
+          className="w-full py-3 px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shadow-md shadow-indigo-200"
         >
-          Return to Home <ArrowRight className="w-4 h-4" />
+          Start Your Assessment <ArrowRight className="w-4 h-4" />
+        </button>
+
+        {/* Optional secondary link to go home if needed */}
+        <button 
+           onClick={() => navigate('/')}
+           className="mt-4 text-sm text-gray-500 hover:text-gray-700 hover:underline"
+        >
+           Return to Home
         </button>
       </div>
     </div>
