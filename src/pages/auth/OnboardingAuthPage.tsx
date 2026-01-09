@@ -17,6 +17,8 @@ import { Input } from "../../components/ui/Input";
 import artparkLogo from "../../assets/artpark_in_logo.jpg";
 import { useApplicationStore } from "../../store/useApplicationStore";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 type AuthView = "selection" | "login" | "signup"; // Removed 'details'
 type UserRole = "founder" | "innovator" | null;
 
@@ -71,34 +73,50 @@ export default function OnboardingAuthPage() {
       return;
     }
 
-    // 1. Set Role in Global Store
-    if (role) setRole(role);
-
-    // 2. Pre-fill Store with Name & Email
-    if (role === "innovator") {
-      updateInnovator({
-        leadName: formData.fullName, // Mapped to leadName for Innovator
-        email: formData.email,
+    try {
+      // --- NEW: CALL BACKEND API ---
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName,
+          role: "applicant", // Force role to applicant
+        }),
       });
-    } else {
-      updateFounder({
-        fullName: formData.fullName,
-        email: formData.email,
-      });
-    }
 
-    // 3. Simulate API Call (Supabase/Auth Signup)
-    console.log("Creating Account:", { role, email: formData.email });
+      const data = await response.json();
 
-    setTimeout(() => {
-      setIsLoading(false);
-      // 4. Navigate to the correct wizard
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+
+      // --- SUCCESS: SAVE TOKEN & USER ---
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("artpark_user", JSON.stringify(data.user));
+
+      // Update Global Store
+      if (role) setRole(role);
+
+      // Pre-fill Store with Name & Email
+      if (role === "innovator") {
+        updateInnovator({ leadName: formData.fullName, email: formData.email });
+      } else {
+        updateFounder({ fullName: formData.fullName, email: formData.email });
+      }
+
+      // Navigate
       if (role === "innovator") {
         navigate("/apply/innovator");
       } else {
         navigate("/apply/founder");
       }
-    }, 1500);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const goBack = () => {

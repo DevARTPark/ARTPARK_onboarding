@@ -19,6 +19,9 @@ import InfoSlide from "../components/slides/InfoSlide";
 import ReviewSlide from "../components/slides/ReviewSlide";
 import ConsentSlide from "../components/slides/ConsentSlide";
 
+// --- CONFIG ---
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 // --- PROPS INTERFACE ---
 interface ApplicationEngineProps {
   flowConfig: SlideConfig[];
@@ -31,6 +34,7 @@ export default function ApplicationEngine({
 }: ApplicationEngineProps) {
   const store = useApplicationStore();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false); // To show loading state
 
   // 1. Filter Slides
   const activeSlides = useMemo(() => {
@@ -38,7 +42,7 @@ export default function ApplicationEngine({
       if (!slide.condition) return true;
       return slide.condition(store);
     });
-  }, [store.venture.track, store.role, flowConfig]); // Added flowConfig dependency
+  }, [store.venture.track, store.role, flowConfig]);
 
   // 2. Get Current Slide
   const currentSlide = activeSlides[currentIndex];
@@ -84,13 +88,65 @@ export default function ApplicationEngine({
     );
   };
 
-  // 5. Navigation
+  // --- NEW: SUBMIT FUNCTION ---
+  const submitApplication = async () => {
+    setIsSubmitting(true);
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("artpark_user") || "{}");
+
+    if (!token || !user.id) {
+      alert("You are not logged in. Please log in to submit.");
+      setIsSubmitting(false);
+      // Optional: Redirect to login
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/onboarding/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // 'Authorization': `Bearer ${token}` // Add this if you implement auth middleware
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          data: store, // Send the entire Zustand store state
+          submit: true, // Flag to mark as SUBMITTED in DB
+        }),
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resData.error || "Submission failed");
+      }
+
+      // Success!
+      alert(
+        `Application Submitted Successfully! Reference ID: ${
+          resData.application?.id || "N/A"
+        }`
+      );
+
+      // Clear local storage or redirect
+      // store.resetForm(); // Optional: reset store
+      window.location.href = "https://artpark.in"; // Redirect to main website or success page
+    } catch (error: any) {
+      console.error("Submission Error:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 5. Navigation (Updated with Submit Logic)
   const next = () => {
     if (currentIndex < activeSlides.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      console.log("Form Submitted", store);
-      alert(`Application Submitted for ${trackTitle}!`);
+      // LAST SLIDE REACHED -> SUBMIT
+      console.log("Submitting Form...", store);
+      submitApplication();
     }
   };
 
@@ -133,7 +189,6 @@ export default function ApplicationEngine({
         return true; // Optional for Innovator for now
       case "consent":
         // Check if all checkboxes defined in props are true in the store
-        // We assume generic 'items' prop for consent slide
         const requiredKeys = s.props?.items?.map((i: any) => i.id) || [];
         return requiredKeys.every(
           (key: string) =>
@@ -244,11 +299,21 @@ export default function ApplicationEngine({
           subtitle={
             currentSlide.type === "intro" ? undefined : currentSlide.subtitle
           }
-          onNext={next}
+          onNext={next} // Updated Next Function
           onBack={currentIndex > 0 ? back : undefined}
-          canProceed={checkCanProceed()}
+          canProceed={checkCanProceed() && !isSubmitting} // Disable if submitting
         >
-          {renderSlideContent(currentSlide)}
+          {/* Show a Loading Overlay if submitting */}
+          {isSubmitting ? (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-600 font-medium">
+                Submitting Application...
+              </p>
+            </div>
+          ) : (
+            renderSlideContent(currentSlide)
+          )}
         </QuestionSlide>
       </AnimatePresence>
     </ApplicationLayout>

@@ -62,47 +62,29 @@ export interface FounderProfile {
 // Venture Profile (Pages 4-9)
 export interface VentureProfile {
     track: VentureTrack | null;
-
-    // Identity
     organizationName: string;
     registrationYear: string;
     legalEntity: string;
     website: string;
-
-    // Institute (Researcher only)
     instituteName: string;
     isDsirCertified: boolean;
-
-    // Funding
     hasFunding: boolean;
     fundingDetails: string;
     incubatorName: string;
-
-    // Tech Focus
     vertical: string;
     techCategory: string[];
-
-    // Maturity
     currentStage: string;
     trlLevel: string;
-
-    // The Pitch
     problemStatement: string;
     solutionDescription: string;
     techInnovation: string;
     keyRisks: string;
-
-    // Market
     targetUsers: string;
     marketValidation: string;
-
-    // Team Structure (Section E - Missing in previous version)
     teamHistory: string;
-
-    // NEW: Innovator-in-Residence Specifics (Task 5)
-    motivation: string;      // Why ARTPARK?
-    supportNeeded: string;   // Mentorship, Tech, etc.
-    commitment: string;      // Full-time vs Part-time
+    motivation: string;
+    supportNeeded: string;
+    commitment: string;
 }
 
 // Uploads
@@ -110,7 +92,13 @@ export interface Uploads {
     pitchDeck: string | null;
     budgetDoc: string | null;
     demoVideo: string | null;
-    otherDocs: string | null; // (Section H - Missing in previous version)
+    otherDocs: string | null;
+}
+
+export interface Declarations {
+    isAccurate: boolean;
+    agreesToTerms: boolean;
+    agreesToCommunication: boolean;
 }
 
 export interface ApplicationState {
@@ -124,76 +112,67 @@ export interface ApplicationState {
     uploads: Uploads;
     declarations: Declarations;
 
-
     // Actions
     setRole: (role: UserRole) => void;
     updateInnovator: (fields: Partial<InnovatorProfile>) => void;
     updateFounder: (fields: Partial<FounderProfile>) => void;
-
     addCoFounder: () => void;
     removeCoFounder: (id: string) => void;
     updateCoFounder: (id: string, fields: Partial<CoFounder>) => void;
-
     updateVenture: (fields: Partial<VentureProfile>) => void;
     updateUploads: (fields: Partial<Uploads>) => void;
     updateDeclarations: (fields: Partial<Declarations>) => void;
-
     resetForm: () => void;
 }
 
-// Declarations Interface
-export interface Declarations {
-    isAccurate: boolean;
-    agreesToTerms: boolean; // "I understand support does not guarantee funding..."
-    agreesToCommunication: boolean;
-}
+const initialState = {
+    role: 'founder' as UserRole,
+    currentStep: 1,
+
+    innovator: {
+        teamName: '', leadName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
+        currentRole: '', organization: '', city: '', country: 'India',
+        isIncubated: null, incubatorName: '', hasGrants: null, grantDetails: '',
+        primarySkill: '', yearsExperience: '', bio: ''
+    },
+
+    founder: {
+        fullName: '', email: '', phone: '', currentRole: '', affiliation: '',
+        organization: '', city: '', country: 'India', educationLevel: '', college: '',
+        discipline: '', yearsExperience: '', primaryStrength: '', linkedinUrl: '',
+        githubUrl: '', scholarUrl: '', portfolioUrl: '', bio: ''
+    },
+
+    coFounders: [] as CoFounder[],
+
+    venture: {
+        track: null,
+        organizationName: '', registrationYear: '', legalEntity: '', website: '',
+        instituteName: '', isDsirCertified: false,
+        hasFunding: false, fundingDetails: '', incubatorName: '',
+        vertical: '', techCategory: [],
+        currentStage: '', trlLevel: '',
+        problemStatement: '', solutionDescription: '', techInnovation: '', keyRisks: '',
+        targetUsers: '', marketValidation: '',
+        teamHistory: '',
+        motivation: '', supportNeeded: '', commitment: ''
+    },
+
+    uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null, otherDocs: null },
+
+    declarations: {
+        isAccurate: false,
+        agreesToTerms: false,
+        agreesToCommunication: false
+    }
+};
 
 // --- STORE IMPLEMENTATION ---
 
 export const useApplicationStore = create<ApplicationState>()(
     persist(
         (set) => ({
-            role: 'founder',
-            currentStep: 1,
-
-            innovator: {
-                teamName: '', leadName: '', email: '', phone: '', linkedinUrl: '', professionalStatus: '',
-                currentRole: '', organization: '', city: '', country: 'India',
-                isIncubated: null, incubatorName: '', hasGrants: null, grantDetails: '',
-                primarySkill: '', yearsExperience: '',
-                bio: ''
-            },
-
-            founder: {
-                fullName: '', email: '', phone: '', currentRole: '', affiliation: '',
-                organization: '', city: '', country: 'India', educationLevel: '', college: '',
-                discipline: '', yearsExperience: '', primaryStrength: '', linkedinUrl: '',
-                githubUrl: '', scholarUrl: '', portfolioUrl: '', bio: ''
-            },
-
-            coFounders: [],
-
-            venture: {
-                track: null,
-                organizationName: '', registrationYear: '', legalEntity: '', website: '',
-                instituteName: '', isDsirCertified: false,
-                hasFunding: false, fundingDetails: '', incubatorName: '',
-                vertical: '', techCategory: [],
-                currentStage: '', trlLevel: '',
-                problemStatement: '', solutionDescription: '', techInnovation: '', keyRisks: '',
-                targetUsers: '', marketValidation: '',
-                teamHistory: '', // Default value
-                motivation: '', supportNeeded: '', commitment: ''
-            },
-
-            uploads: { pitchDeck: null, budgetDoc: null, demoVideo: null, otherDocs: null }, // Default value
-
-            // Default Declarations
-            declarations: {
-                isAccurate: false,
-                agreesToTerms: false,
-                agreesToCommunication: false
-            },
+            ...initialState, // Use the initial state here
 
             setRole: (role) => set({ role }),
 
@@ -232,7 +211,8 @@ export const useApplicationStore = create<ApplicationState>()(
                 declarations: { ...state.declarations, ...fields }
             })),
 
-            resetForm: () => set({ role: 'founder', currentStep: 1 })
+            // --- 2. UPDATE RESET FORM TO CLEAR EVERYTHING ---
+            resetForm: () => set({ ...initialState })
         }),
         {
             name: 'artpark-onboarding-storage',
