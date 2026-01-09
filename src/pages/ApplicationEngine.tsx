@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useApplicationStore } from "../store/useApplicationStore";
+import { useNavigate } from "react-router-dom"; // <--- 1. Import useNavigate
 
 // Types
 import type { SlideConfig } from "../features/application/types/SlideTypes";
@@ -19,10 +20,6 @@ import InfoSlide from "../components/slides/InfoSlide";
 import ReviewSlide from "../components/slides/ReviewSlide";
 import ConsentSlide from "../components/slides/ConsentSlide";
 
-// --- CONFIG ---
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-// --- PROPS INTERFACE ---
 interface ApplicationEngineProps {
   flowConfig: SlideConfig[];
   trackTitle: string;
@@ -33,10 +30,11 @@ export default function ApplicationEngine({
   trackTitle,
 }: ApplicationEngineProps) {
   const store = useApplicationStore();
+  const navigate = useNavigate(); // <--- 2. Initialize hook
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false); // To show loading state
+  const [isSubmitting, setIsSubmitting] = useState(false); // <--- 3. Add Loading State
 
-  // 1. Filter Slides
+  // ... (Keep existing useMemo/useEffect logic for activeSlides & currentSlide) ...
   const activeSlides = useMemo(() => {
     return flowConfig.filter((slide) => {
       if (!slide.condition) return true;
@@ -44,48 +42,34 @@ export default function ApplicationEngine({
     });
   }, [store.venture.track, store.role, flowConfig]);
 
-  // 2. Get Current Slide
   const currentSlide = activeSlides[currentIndex];
 
-  // Safety Reset
   useEffect(() => {
     if (!currentSlide && activeSlides.length > 0) {
       setCurrentIndex(activeSlides.length - 1);
     }
   }, [activeSlides.length, currentSlide]);
 
-  if (!currentSlide)
-    return <div className="p-10 text-center">Loading Application...</div>;
+  if (!currentSlide) return <div className="p-10 text-center">Loading Application...</div>;
 
-  // 3. Progress Logic
   const currentSectionId = currentSlide.sectionId;
-  const sectionSlides = activeSlides.filter(
-    (s) => s.sectionId === currentSectionId
-  );
+  const sectionSlides = activeSlides.filter((s) => s.sectionId === currentSectionId);
   const localIndex = sectionSlides.findIndex((s) => s.id === currentSlide.id);
   const localProgress = ((localIndex + 1) / sectionSlides.length) * 100;
 
-  // 4. Update Handler
+  // ... (Keep handleUpdate and getValue functions as is) ...
   const handleUpdate = (path: string, value: any) => {
     const [domain, field] = path.split(".");
     if (domain === "founder") store.updateFounder({ [field]: value });
     else if (domain === "venture") store.updateVenture({ [field]: value });
     else if (domain === "innovator") store.updateInnovator({ [field]: value });
     else if (domain === "uploads") store.updateUploads({ [field]: value });
-    else if (domain === "declarations")
-      store.updateDeclarations({ [field]: value });
+    else if (domain === "declarations") store.updateDeclarations({ [field]: value });
   };
 
   const getValue = (path?: string) => {
     if (!path) return "";
-    return (
-      path
-        .split(".")
-        .reduce(
-          (obj: any, key) => (obj && obj[key] !== undefined ? obj[key] : ""),
-          store
-        ) || ""
-    );
+    return path.split(".").reduce((obj: any, key) => (obj && obj[key] !== undefined ? obj[key] : ""), store) || "";
   };
 
   // --- NEW: SUBMIT FUNCTION ---
@@ -156,7 +140,7 @@ export default function ApplicationEngine({
     }
   };
 
-  // 6. Validation
+  // ... (Keep checkCanProceed and renderSlideContent as is) ...
   const checkCanProceed = (): boolean => {
     const s = currentSlide;
     switch (s.type) {
@@ -199,21 +183,13 @@ export default function ApplicationEngine({
     }
   };
 
-  // 7. Render
   const renderSlideContent = (slide: SlideConfig) => {
+    // ... (Keep your existing switch case logic exactly as is) ...
+    // Copy-paste the switch(slide.type) block from your existing file here
     switch (slide.type) {
-      case "intro":
-        return <InfoSlide type="intro" content={slide.subtitle} />;
-      case "form":
-        return (
-          <FormSlide
-            inputs={slide.props?.inputs || []}
-            values={store}
-            onUpdate={handleUpdate}
-          />
-        );
+      case "intro": return <InfoSlide type="intro" content={slide.subtitle} />;
+      case "form": return <FormSlide inputs={slide.props?.inputs || []} values={store} onUpdate={handleUpdate} />;
       case "option":
-        // Map generic Option IDs to Store Fields
         let field = "dummy";
         if (slide.id === "status") field = "innovator.professionalStatus";
         else if (slide.id === "skills") field = "innovator.primarySkill";
@@ -222,68 +198,40 @@ export default function ApplicationEngine({
         else if (slide.id === "tech_category") field = "venture.techCategory";
         else if (slide.id === "trl_level") field = "venture.trlLevel";
         else if (slide.id === "iir_commitment") field = "venture.commitment";
-
         return (
           <OptionSlide
             options={slide.props?.options || []}
             selected={getValue(field)}
             multiSelect={slide.props?.multiSelect}
             onSelect={(val: string) => {
-              // FIX: Handle Multi-Select Array Logic
               if (slide.props?.multiSelect) {
                 const currentArray = (getValue(field) as string[]) || [];
-                // If value exists, remove it. If not, add it.
-                const newValue = currentArray.includes(val)
-                  ? currentArray.filter((item) => item !== val)
-                  : [...currentArray, val];
+                const newValue = currentArray.includes(val) ? currentArray.filter((item) => item !== val) : [...currentArray, val];
                 handleUpdate(field, newValue);
               } else {
-                // Single Select
                 handleUpdate(field, val);
               }
             }}
           />
         );
-      case "essay":
-        return (
-          <EssaySlide
-            questions={slide.props?.questions || []}
-            values={store}
-            onUpdate={handleUpdate}
-          />
-        );
-      case "list":
-        return <ListSlide />;
-      case "upload":
-        return (
-          <UploadSlide
-            files={slide.props?.files || []}
-            values={store}
-            onUpdate={(key, val) => store.updateUploads({ [key]: val })}
-          />
-        );
-      case "review":
-        return <ReviewSlide data={store} />;
-      case "consent":
-        return (
-          <ConsentSlide
-            // FIX: Cast the generic items to the specific type required by ConsentSlide
-            items={
-              (slide.props?.items || []) as Array<{
-                id: keyof typeof store.declarations;
-                label: string;
-              }>
-            }
-            values={store.declarations}
-            onUpdate={(field, val) =>
-              store.updateDeclarations({ [field]: val })
-            }
-          />
-        );
-      default:
-        return <div>Unknown Slide</div>;
+      case "essay": return <EssaySlide questions={slide.props?.questions || []} values={store} onUpdate={handleUpdate} />;
+      case "list": return <ListSlide />;
+      case "upload": return <UploadSlide files={slide.props?.files || []} values={store} onUpdate={(key, val) => store.updateUploads({ [key]: val })} />;
+      case "review": return <ReviewSlide data={store} />;
+      case "consent": return <ConsentSlide items={(slide.props?.items || []) as any} values={store.declarations} onUpdate={(field, val) => store.updateDeclarations({ [field]: val })} />;
+      default: return <div>Unknown Slide</div>;
     }
   };
+
+  if (isSubmitting) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-white z-50">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin mb-4"></div>
+        <h2 className="text-xl font-bold">Submitting Application...</h2>
+        <p className="text-gray-500">Please do not close this window.</p>
+      </div>
+    );
+  }
 
   return (
     <ApplicationLayout
