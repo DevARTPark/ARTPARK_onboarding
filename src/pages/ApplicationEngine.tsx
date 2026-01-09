@@ -72,22 +72,65 @@ export default function ApplicationEngine({
     return path.split(".").reduce((obj: any, key) => (obj && obj[key] !== undefined ? obj[key] : ""), store) || "";
   };
 
-  // --- UPDATED NEXT FUNCTION ---
-  const next = async () => {
+  // --- NEW: SUBMIT FUNCTION ---
+  const submitApplication = async () => {
+    setIsSubmitting(true);
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("artpark_user") || "{}");
+
+    if (!token || !user.id) {
+      alert("You are not logged in. Please log in to submit.");
+      setIsSubmitting(false);
+      // Optional: Redirect to login
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/onboarding/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // 'Authorization': `Bearer ${token}` // Add this if you implement auth middleware
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          data: store, // Send the entire Zustand store state
+          submit: true, // Flag to mark as SUBMITTED in DB
+        }),
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resData.error || "Submission failed");
+      }
+
+      // Success!
+      alert(
+        `Application Submitted Successfully! Reference ID: ${
+          resData.application?.id || "N/A"
+        }`
+      );
+
+      // Clear local storage or redirect
+      // store.resetForm(); // Optional: reset store
+      window.location.href = "https://artpark.in"; // Redirect to main website or success page
+    } catch (error: any) {
+      console.error("Submission Error:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 5. Navigation (Updated with Submit Logic)
+  const next = () => {
     if (currentIndex < activeSlides.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      // 4. Handle Submission
-      setIsSubmitting(true);
-      console.log("Submitting Payload:", store);
-
-      // Simulate API Delay (2 seconds)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      setIsSubmitting(false);
-      
-      // Redirect to Success Page
-      navigate("/application-submitted");
+      // LAST SLIDE REACHED -> SUBMIT
+      console.log("Submitting Form...", store);
+      submitApplication();
     }
   };
 
@@ -99,23 +142,45 @@ export default function ApplicationEngine({
 
   // ... (Keep checkCanProceed and renderSlideContent as is) ...
   const checkCanProceed = (): boolean => {
-      const s = currentSlide;
-      switch (s.type) {
-        case "form": return (s.props?.inputs?.every((i) => !i.required || !!getValue(i.field)) ?? true);
-        case "option":
-          if (s.id === "status") return !!store.innovator.professionalStatus;
-          if (s.id === "skills") return !!store.innovator.primarySkill;
-          return s.id === "track_selection" ? !!store.venture.track :
-                 s.id === "vertical" ? !!store.venture.vertical :
-                 s.id === "tech_category" ? store.venture.techCategory.length > 0 :
-                 s.id === "trl_level" ? !!store.venture.trlLevel : true;
-        case "essay": return (s.props?.questions?.every((q) => !q.minChars || getValue(q.field).length >= q.minChars) ?? true);
-        case "upload": return true; 
-        case "consent":
-          const requiredKeys = s.props?.items?.map((i: any) => i.id) || [];
-          return requiredKeys.every((key: string) => store.declarations[key as keyof typeof store.declarations]);
-        default: return true;
-      }
+    const s = currentSlide;
+    switch (s.type) {
+      case "form":
+        return (
+          s.props?.inputs?.every((i) => !i.required || !!getValue(i.field)) ??
+          true
+        );
+      case "option":
+        // Specialized check for Innovator Status
+        if (s.id === "status") return !!store.innovator.professionalStatus;
+        if (s.id === "skills") return !!store.innovator.primarySkill;
+        // ... Founder checks ...
+        return s.id === "track_selection"
+          ? !!store.venture.track
+          : s.id === "vertical"
+          ? !!store.venture.vertical
+          : s.id === "tech_category"
+          ? store.venture.techCategory.length > 0
+          : s.id === "trl_level"
+          ? !!store.venture.trlLevel
+          : true;
+      case "essay":
+        return (
+          s.props?.questions?.every(
+            (q) => !q.minChars || getValue(q.field).length >= q.minChars
+          ) ?? true
+        );
+      case "upload":
+        return true; // Optional for Innovator for now
+      case "consent":
+        // Check if all checkboxes defined in props are true in the store
+        const requiredKeys = s.props?.items?.map((i: any) => i.id) || [];
+        return requiredKeys.every(
+          (key: string) =>
+            store.declarations[key as keyof typeof store.declarations]
+        );
+      default:
+        return true;
+    }
   };
 
   const renderSlideContent = (slide: SlideConfig) => {
@@ -179,12 +244,24 @@ export default function ApplicationEngine({
           key={currentSlide.id}
           isActive={true}
           title={currentSlide.title}
-          subtitle={currentSlide.type === "intro" ? undefined : currentSlide.subtitle}
-          onNext={next}
+          subtitle={
+            currentSlide.type === "intro" ? undefined : currentSlide.subtitle
+          }
+          onNext={next} // Updated Next Function
           onBack={currentIndex > 0 ? back : undefined}
-          canProceed={checkCanProceed()}
+          canProceed={checkCanProceed() && !isSubmitting} // Disable if submitting
         >
-          {renderSlideContent(currentSlide)}
+          {/* Show a Loading Overlay if submitting */}
+          {isSubmitting ? (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-600 font-medium">
+                Submitting Application...
+              </p>
+            </div>
+          ) : (
+            renderSlideContent(currentSlide)
+          )}
         </QuestionSlide>
       </AnimatePresence>
     </ApplicationLayout>
