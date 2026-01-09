@@ -7,26 +7,35 @@ import {
   ArrowLeft, 
   RotateCcw, 
   LayoutDashboard,
-  ChevronRight
+  BarChart3,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { ASSESSMENT_LAPS } from '../components/assessment/assessment_questions';
+
+// --- TYPES ---
+type EvaluationBucket = 'GREEN' | 'YELLOW' | 'RED';
+
+interface AssessmentResult {
+  totalScore: number;
+  dimensionScores: Record<string, number>;
+  bucket: EvaluationBucket;
+  lowDimensions: string[]; // IDs of dimensions < 10
+}
 
 export default function AssessmentPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   // --- STATE ---
-  // Tracks the currently selected Lap ID (Dimension)
   const [activeLapId, setActiveLapId] = useState<string>(ASSESSMENT_LAPS[0].id);
-  
-  // Tracks the current question index WITHIN the active lap
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  
-  // Stores all answers: { [questionId]: score }
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  
-  // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New State for Results
+  const [showResults, setShowResults] = useState(false);
+  const [resultData, setResultData] = useState<AssessmentResult | null>(null);
 
   // --- DERIVED DATA ---
   const activeLap = ASSESSMENT_LAPS.find(l => l.id === activeLapId) || ASSESSMENT_LAPS[0];
@@ -39,13 +48,49 @@ export default function AssessmentPage() {
   const totalAnswered = Object.keys(answers).length;
   const isComplete = totalAnswered === totalQuestions;
 
-  // --- HANDLERS ---
+  // --- SCORING LOGIC ---
+  const calculateResults = (): AssessmentResult => {
+    let totalScore = 0;
+    const dimensionScores: Record<string, number> = {};
+    const lowDimensions: string[] = [];
 
+    // Calculate scores per lap (dimension)
+    ASSESSMENT_LAPS.forEach(lap => {
+      let lapScore = 0;
+      lap.questions.forEach(q => {
+        lapScore += (answers[q.id] || 0);
+      });
+      
+      dimensionScores[lap.id] = lapScore;
+      totalScore += lapScore;
+
+      // Check for "Red Flag" dimensions (< 10 points)
+      if (lapScore < 10) {
+        lowDimensions.push(lap.id);
+      }
+    });
+
+    // Determine Bucket based on PDF Rules
+    // Green: Total >= 75 AND No dimension < 10
+    // Red: Total < 60 OR >= 2 dimensions < 10
+    // Yellow: Everything else (Score 60-74 OR exactly 1 dimension < 10)
+    
+    let bucket: EvaluationBucket = 'YELLOW'; 
+
+    if (totalScore < 60 || lowDimensions.length >= 2) {
+      bucket = 'RED';
+    } else if (totalScore >= 75 && lowDimensions.length === 0) {
+      bucket = 'GREEN';
+    } else {
+      bucket = 'YELLOW';
+    }
+
+    return { totalScore, dimensionScores, bucket, lowDimensions };
+  };
+
+  // --- HANDLERS ---
   const handleSelectOption = (score: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [activeQuestion.id]: score
-    }));
+    setAnswers(prev => ({ ...prev, [activeQuestion.id]: score }));
   };
 
   const handleClearAnswer = () => {
@@ -55,11 +100,9 @@ export default function AssessmentPage() {
   };
 
   const handleNext = () => {
-    // If not last question in lap, go next
     if (currentQuestionIndex < activeLap.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // If last question, try to go to next lap
       const currentLapIndex = ASSESSMENT_LAPS.findIndex(l => l.id === activeLapId);
       if (currentLapIndex < ASSESSMENT_LAPS.length - 1) {
         const nextLap = ASSESSMENT_LAPS[currentLapIndex + 1];
@@ -73,7 +116,6 @@ export default function AssessmentPage() {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     } else {
-      // If first question, try to go to previous lap's last question
       const currentLapIndex = ASSESSMENT_LAPS.findIndex(l => l.id === activeLapId);
       if (currentLapIndex > 0) {
         const prevLap = ASSESSMENT_LAPS[currentLapIndex - 1];
@@ -85,7 +127,6 @@ export default function AssessmentPage() {
 
   const handleLapChange = (lapId: string) => {
     setActiveLapId(lapId);
-    // Find the first unanswered question in this lap, or default to 0
     const lap = ASSESSMENT_LAPS.find(l => l.id === lapId);
     if (lap) {
       const firstUnanswered = lap.questions.findIndex(q => answers[q.id] === undefined);
@@ -97,23 +138,20 @@ export default function AssessmentPage() {
     if (!isComplete) return;
     
     setIsSubmitting(true);
-    console.log("Submitting Scores for User:", id, answers);
-
-    // Simulate API Call
+    
+    // Simulate API processing delay
     setTimeout(() => {
+      const results = calculateResults();
+      setResultData(results);
+      setShowResults(true);
       setIsSubmitting(false);
-      navigate('/'); // Redirect to home or results page
-      alert("Assessment Submitted Successfully!");
-    }, 1500);
+      console.log("Assessment Results:", results);
+    }, 1000);
   };
 
-  // --- RENDER HELPERS ---
-
-  // Check if a specific lap is fully answered
   const getLapProgress = (lapId: string) => {
     const lap = ASSESSMENT_LAPS.find(l => l.id === lapId);
     if (!lap) return { current: 0, total: 0, isDone: false };
-    
     const answeredCount = lap.questions.filter(q => answers[q.id] !== undefined).length;
     return {
       current: answeredCount,
@@ -122,11 +160,114 @@ export default function AssessmentPage() {
     };
   };
 
+  // --- RENDER RESULTS VIEW ---
+  if (showResults && resultData) {
+    const bucketConfig = {
+      GREEN: {
+        label: 'High Priority (Green)',
+        color: 'text-green-700',
+        bg: 'bg-green-50',
+        border: 'border-green-200',
+        icon: CheckCircle,
+        desc: 'Indicates strong innovation judgment and balanced capability.'
+      },
+      YELLOW: {
+        label: 'Review Required (Yellow)',
+        color: 'text-yellow-700',
+        bg: 'bg-yellow-50',
+        border: 'border-yellow-200',
+        icon: AlertTriangle,
+        desc: 'Indicates potential with uneven strengths or gaps.'
+      },
+      RED: {
+        label: 'Not Ready (Red)',
+        color: 'text-red-700',
+        bg: 'bg-red-50',
+        border: 'border-red-200',
+        icon: XCircle,
+        desc: 'Significant gaps detected. Reassessment or major pivot recommended.'
+      }
+    }[resultData.bucket];
+
+    const BucketIcon = bucketConfig.icon;
+
+    return (
+      <div className="min-h-screen bg-gray-50 font-sans p-8 flex items-center justify-center">
+        <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+          
+          {/* Result Header */}
+          <div className={`${bucketConfig.bg} p-10 border-b ${bucketConfig.border} text-center`}>
+            <div className={`mx-auto w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-sm mb-6 ${bucketConfig.color}`}>
+              <BucketIcon className="w-10 h-10" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessment Complete</h1>
+            <p className={`text-xl font-semibold mb-4 ${bucketConfig.color}`}>
+              {bucketConfig.label}
+            </p>
+            <p className="text-gray-600 max-w-lg mx-auto">{bucketConfig.desc}</p>
+            
+            <div className="mt-8 inline-flex items-baseline gap-2">
+              <span className="text-5xl font-bold text-gray-900">{resultData.totalScore.toFixed(1)}</span>
+              <span className="text-gray-500 font-medium text-lg">/ 100</span>
+            </div>
+          </div>
+
+          {/* Dimension Breakdown */}
+          <div className="p-10">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-indigo-600" />
+              Dimension Breakdown
+            </h3>
+            
+            <div className="grid gap-6 md:grid-cols-2">
+              {ASSESSMENT_LAPS.map(lap => {
+                const score = resultData.dimensionScores[lap.id] || 0;
+                // Highlight dimensions < 10 as per "Red/Yellow" logic
+                const isLow = score < 10; 
+                
+                return (
+                  <div key={lap.id} className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="font-medium text-gray-700">{lap.title.replace('Lap ', '').split(':')[1]}</span>
+                      <span className={`font-bold ${isLow ? 'text-red-600' : 'text-gray-900'}`}>
+                        {score} <span className="text-gray-400 text-sm font-normal">/ 20</span>
+                      </span>
+                    </div>
+                    {/* Bar */}
+                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${isLow ? 'bg-red-500' : 'bg-indigo-500'}`} 
+                        style={{ width: `${(score / 20) * 100}%` }}
+                      />
+                    </div>
+                    {isLow && (
+                      <p className="text-xs text-red-500 mt-2 font-medium">Needs Attention (Score &lt; 10)</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-10 flex justify-center">
+              <button 
+                onClick={() => navigate('/')}
+                className="w-full md:w-auto px-8 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                Back to Dashboard <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER ASSESSMENT (Standard View) ---
   return (
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
       
       {/* --- SIDEBAR: DIMENSIONS --- */}
-      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10">
+      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 hidden md:flex">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3 text-gray-800 mb-1">
             <LayoutDashboard className="w-6 h-6 text-indigo-600" />
@@ -136,7 +277,7 @@ export default function AssessmentPage() {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {ASSESSMENT_LAPS.map((lap, index) => {
+          {ASSESSMENT_LAPS.map((lap) => {
             const { current, total, isDone } = getLapProgress(lap.id);
             const isActive = activeLapId === lap.id;
 
@@ -163,7 +304,6 @@ export default function AssessmentPage() {
                   )}
                 </div>
                 
-                {/* Mini Progress Bar for Sidebar Item */}
                 <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-green-500' : 'bg-indigo-500'}`}
@@ -210,7 +350,6 @@ export default function AssessmentPage() {
 
       {/* --- MAIN CONTENT: QUESTIONS --- */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center z-10">
           <div>
             <h2 className="text-xl font-bold text-gray-900">{activeLap.title}</h2>
@@ -221,11 +360,8 @@ export default function AssessmentPage() {
           </div>
         </header>
 
-        {/* Scrollable Question Area */}
         <div className="flex-1 overflow-y-auto p-8 lg:p-12">
           <div className="max-w-3xl mx-auto">
-            
-            {/* Question Card */}
             <div className="mb-8">
               <h3 className="text-2xl font-medium text-gray-900 leading-normal mb-8">
                 {activeQuestion.text}
@@ -248,7 +384,6 @@ export default function AssessmentPage() {
                         ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
                         {isSelected && <Circle className="w-2.5 h-2.5 fill-white text-white" />}
                       </div>
-                      
                       <div className="flex-1">
                         <span className={`text-lg ${isSelected ? 'text-indigo-900 font-medium' : 'text-gray-700'}`}>
                           {option.text}
@@ -260,7 +395,6 @@ export default function AssessmentPage() {
               </div>
             </div>
 
-            {/* Action Bar: Clear Answer */}
             <div className="h-8 mb-8">
                {answers[activeQuestion.id] !== undefined && (
                   <button 
@@ -274,11 +408,8 @@ export default function AssessmentPage() {
           </div>
         </div>
 
-        {/* Bottom Navigation Bar */}
         <div className="bg-white border-t border-gray-200 p-6">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
-            
-            {/* Previous Button */}
             <button
               onClick={handlePrev}
               disabled={currentQuestionIndex === 0 && activeLapId === ASSESSMENT_LAPS[0].id}
@@ -287,7 +418,6 @@ export default function AssessmentPage() {
               <ArrowLeft className="w-5 h-5" /> Previous
             </button>
 
-            {/* Indicator Dots */}
             <div className="hidden md:flex gap-1.5">
               {activeLap.questions.map((_, idx) => (
                 <div 
@@ -303,7 +433,6 @@ export default function AssessmentPage() {
               ))}
             </div>
 
-            {/* Next Button */}
             <button
               onClick={handleNext}
               className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 font-medium shadow-md transition-all hover:translate-x-1"
