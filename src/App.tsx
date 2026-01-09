@@ -9,10 +9,13 @@ import OnboardingAuthPage from "./pages/auth/OnboardingAuthPage";
 
 // 1. Import the Unified Engine
 import ApplicationEngine from "./pages/ApplicationEngine";
+import ApplicationSuccess from "./pages/ApplicationSuccess";
+import AssessmentPage from "./pages/AssessmentPage";
 
 // 2. Import the Configurations
 import { APPLICATION_FLOW } from "./features/application/config/applicationFlow";
 import { INNOVATOR_FLOW } from "./features/application/config/innovatorFlow";
+
 
 export default function App() {
   return (
@@ -35,6 +38,11 @@ export default function App() {
             />
           }
         />
+        {/* 1. Success Page (Post-Submission) */}
+        <Route path="/application-submitted" element={<ApplicationSuccess />} />
+
+        {/* 2. Assessment Page (Accessed via Email Link) */}
+        <Route path="/assessment/:id" element={<AssessmentPage />} />
 
         {/* INNOVATOR TRACK */}
         {/* Uses the same engine but with Innovator questions */}
